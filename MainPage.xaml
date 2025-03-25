@@ -232,7 +232,7 @@
                                        HasShadow="True"
                                        BorderColor="#EEEEEE"
                                        BackgroundColor="White">
-                                    <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto">
+                                    <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,Auto">
                                         <Label Grid.Row="0" Grid.Column="0"
                                                Text="{Binding Name}"
                                                FontSize="18"
@@ -270,6 +270,27 @@
                                                        TextColor="#666666"/>
                                             </HorizontalStackLayout>
                                         </HorizontalStackLayout>
+
+                                        <CollectionView Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                                                      ItemsSource="{Binding Features}"
+                                                      Margin="0,8,0,0">
+                                            <CollectionView.ItemsLayout>
+                                                <LinearItemsLayout Orientation="Horizontal"
+                                                                 ItemSpacing="8"/>
+                                            </CollectionView.ItemsLayout>
+                                            <CollectionView.ItemTemplate>
+                                                <DataTemplate x:DataType="x:String">
+                                                    <Frame BackgroundColor="#F0F4FF"
+                                                           Padding="8,4"
+                                                           CornerRadius="8"
+                                                           HasShadow="False">
+                                                        <Label Text="{Binding .}"
+                                                               TextColor="#0066FF"
+                                                               FontSize="12"/>
+                                                    </Frame>
+                                                </DataTemplate>
+                                            </CollectionView.ItemTemplate>
+                                        </CollectionView>
                                     </Grid>
                                 </Frame>
                             </DataTemplate>
