@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SmartSearch.Views.ProfilePage"
+             Title="Profile"
+             Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*">
+        <!-- Header -->
+        <Grid Grid.Row="0" 
+              Padding="16,8"
+              ColumnDefinitions="*,Auto,Auto"
+              BackgroundColor="White">
+            <Label Grid.Column="0"
+                   Text="Profile"
+                   FontSize="24"
+                   TextColor="#333333"
+                   FontAttributes="Bold"
+                   VerticalOptions="Center"/>
+        </Grid>
+
+        <!-- Content -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Spacing="24" Padding="16">
+                <Label Text="Profile page content coming soon..."
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"/>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage> 

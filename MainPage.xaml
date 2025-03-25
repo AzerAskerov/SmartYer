@@ -1,0 +1,282 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:SmartSearch.ViewModels"
+             xmlns:models="clr-namespace:SmartSearch.Models"
+             x:Class="SmartSearch.MainPage"
+             x:DataType="vm:MainViewModel"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Header -->
+        <Grid Grid.Row="0" 
+              Padding="16,8"
+              ColumnDefinitions="*,Auto,Auto"
+              BackgroundColor="White">
+            <Label Grid.Column="0"
+                   Text="SmartYer"
+                   FontSize="24"
+                   TextColor="#0066FF"
+                   FontAttributes="Bold"
+                   VerticalOptions="Center"/>
+            
+            <Label Grid.Column="1"
+                    Text="🔔"
+                    FontSize="24"
+                    TextColor="#666666"
+                    Margin="0,0,16,0">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding NotificationsCommand}"/>
+                </Label.GestureRecognizers>
+            </Label>
+            
+            <Label Grid.Column="2"
+                    Text="☰"
+                    FontSize="24"
+                    TextColor="#666666">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding MenuCommand}"/>
+                </Label.GestureRecognizers>
+            </Label>
+        </Grid>
+
+        <!-- Main Content -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Spacing="24" Padding="16">
+                <!-- Search Bar -->
+                <Frame BackgroundColor="#F5F5F5"
+                       Padding="16,8"
+                       CornerRadius="8"
+                       BorderColor="Transparent"
+                       HasShadow="False">
+                    <Grid ColumnDefinitions="Auto,*">
+                        <Label Grid.Column="0"
+                               Text="🔍"
+                               FontSize="20"
+                               TextColor="#666666"
+                               VerticalOptions="Center"/>
+                        <Entry Grid.Column="1"
+                               Placeholder="Search for businesses..."
+                               Text="{Binding SearchText}"
+                               PlaceholderColor="#999999"
+                               BackgroundColor="Transparent"/>
+                    </Grid>
+                </Frame>
+
+                <!-- Action Cards -->
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16">
+                    <!-- Nearby -->
+                    <Frame Grid.Column="0"
+                           BackgroundColor="#F0F4FF"
+                           Padding="16"
+                           CornerRadius="12"
+                           HasShadow="False">
+                        <VerticalStackLayout Spacing="8">
+                            <Frame BackgroundColor="#E1E9FF"
+                                   WidthRequest="40"
+                                   HeightRequest="40"
+                                   CornerRadius="20"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   HorizontalOptions="Start">
+                                <Label Text="📍"
+                                       FontSize="20"
+                                       TextColor="#0066FF"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Frame>
+                            <Label Text="Nearby"
+                                   TextColor="#0066FF"
+                                   FontSize="16"
+                                   FontAttributes="Bold"/>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Top Rated -->
+                    <Frame Grid.Column="1"
+                           BackgroundColor="#F8F0FF"
+                           Padding="16"
+                           CornerRadius="12"
+                           HasShadow="False">
+                        <VerticalStackLayout Spacing="8">
+                            <Frame BackgroundColor="#F0E1FF"
+                                   WidthRequest="40"
+                                   HeightRequest="40"
+                                   CornerRadius="20"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   HorizontalOptions="Start">
+                                <Label Text="⭐"
+                                       FontSize="20"
+                                       TextColor="#9933FF"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Frame>
+                            <Label Text="Top Rated"
+                                   TextColor="#9933FF"
+                                   FontSize="16"
+                                   FontAttributes="Bold"/>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Add New -->
+                    <Frame Grid.Column="2"
+                           BackgroundColor="#F0FFF4"
+                           Padding="16"
+                           CornerRadius="12"
+                           HasShadow="False">
+                        <VerticalStackLayout Spacing="8">
+                            <Frame BackgroundColor="#E1FFE9"
+                                   WidthRequest="40"
+                                   HeightRequest="40"
+                                   CornerRadius="20"
+                                   Padding="0"
+                                   HasShadow="False"
+                                   HorizontalOptions="Start">
+                                <Label Text="➕"
+                                       FontSize="20"
+                                       TextColor="#00CC33"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Frame>
+                            <Label Text="Add New"
+                                   TextColor="#00CC33"
+                                   FontSize="16"
+                                   FontAttributes="Bold"/>
+                        </VerticalStackLayout>
+                    </Frame>
+                </Grid>
+
+                <!-- Recently Visited -->
+                <VerticalStackLayout Spacing="16">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0"
+                               Text="Recently Visited"
+                               FontSize="20"
+                               FontAttributes="Bold"/>
+                        <Button Grid.Column="1"
+                                Text="See All"
+                                TextColor="#0066FF"
+                                BackgroundColor="Transparent"
+                                Command="{Binding SeeAllRecentCommand}"/>
+                    </Grid>
+
+                    <CollectionView ItemsSource="{Binding RecentlyVisited}"
+                                  HeightRequest="160">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Horizontal" ItemSpacing="16"/>
+                        </CollectionView.ItemsLayout>
+                        
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:Business">
+                                <Frame BackgroundColor="White"
+                                       WidthRequest="140"
+                                       CornerRadius="12"
+                                       Padding="16"
+                                       HasShadow="True"
+                                       BorderColor="#EEEEEE">
+                                    <VerticalStackLayout Spacing="8">
+                                        <Frame BackgroundColor="#F0F4FF"
+                                               WidthRequest="40"
+                                               HeightRequest="40"
+                                               CornerRadius="20"
+                                               Padding="0"
+                                               HasShadow="False"
+                                               HorizontalOptions="Start">
+                                            <Label Text="🏢"
+                                                   FontSize="20"
+                                                   TextColor="#666666"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center"/>
+                                        </Frame>
+                                        <Label Text="{Binding Name}"
+                                               FontSize="16"
+                                               LineBreakMode="TailTruncation"
+                                               TextColor="#333333"/>
+                                        <HorizontalStackLayout Spacing="4">
+                                            <Label Text="⭐"
+                                                   TextColor="#FFB800"
+                                                   FontSize="16"/>
+                                            <Label Text="{Binding Rating, StringFormat='{0:F1}'}"
+                                                   FontSize="14"
+                                                   TextColor="#666666"/>
+                                        </HorizontalStackLayout>
+                                    </VerticalStackLayout>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+
+                <!-- Nearby Places -->
+                <VerticalStackLayout Spacing="16">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0"
+                               Text="Nearby Places"
+                               FontSize="20"
+                               FontAttributes="Bold"/>
+                        <Button Grid.Column="1"
+                                Text="See All"
+                                TextColor="#0066FF"
+                                BackgroundColor="Transparent"
+                                Command="{Binding SeeAllNearbyCommand}"/>
+                    </Grid>
+
+                    <CollectionView ItemsSource="{Binding NearbyBusinesses}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:Business">
+                                <Frame Margin="0,0,0,12"
+                                       Padding="16"
+                                       CornerRadius="12"
+                                       HasShadow="True"
+                                       BorderColor="#EEEEEE"
+                                       BackgroundColor="White">
+                                    <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto">
+                                        <Label Grid.Row="0" Grid.Column="0"
+                                               Text="{Binding Name}"
+                                               FontSize="18"
+                                               FontAttributes="Bold"
+                                               TextColor="#333333"/>
+                                        
+                                        <Label Grid.Row="0" Grid.Column="1"
+                                               Text="⭐"
+                                               FontSize="24"
+                                               TextColor="#CCCCCC"/>
+
+                                        <Label Grid.Row="1" Grid.Column="0"
+                                               Text="{Binding Category}"
+                                               TextColor="#666666"
+                                               FontSize="14"
+                                               Margin="0,4"/>
+
+                                        <HorizontalStackLayout Grid.Row="2" Grid.Column="0"
+                                                             Spacing="16">
+                                            <HorizontalStackLayout Spacing="4">
+                                                <Label Text="⭐"
+                                                       TextColor="#FFB800"
+                                                       FontSize="16"/>
+                                                <Label Text="{Binding Rating, StringFormat='{0:F1}'}"
+                                                       FontSize="14"
+                                                       TextColor="#666666"/>
+                                            </HorizontalStackLayout>
+                                            
+                                            <HorizontalStackLayout Spacing="4">
+                                                <Label Text="📍"
+                                                       TextColor="#666666"
+                                                       FontSize="16"/>
+                                                <Label Text="{Binding Distance, StringFormat='{0:F1}km'}"
+                                                       FontSize="14"
+                                                       TextColor="#666666"/>
+                                            </HorizontalStackLayout>
+                                        </HorizontalStackLayout>
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

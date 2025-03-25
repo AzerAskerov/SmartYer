@@ -1,0 +1,25 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35723.152
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartSearch", "SmartSearch.csproj", "{A6DE7F8B-4FF6-9C56-29FC-B4B5E55DC7BE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A6DE7F8B-4FF6-9C56-29FC-B4B5E55DC7BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6DE7F8B-4FF6-9C56-29FC-B4B5E55DC7BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6DE7F8B-4FF6-9C56-29FC-B4B5E55DC7BE}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{A6DE7F8B-4FF6-9C56-29FC-B4B5E55DC7BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6DE7F8B-4FF6-9C56-29FC-B4B5E55DC7BE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {37D9B52A-5501-4FD1-BFA8-A9B4E8E69572}
+	EndGlobalSection
+EndGlobal
