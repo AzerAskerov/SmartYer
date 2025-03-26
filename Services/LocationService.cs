@@ -2,200 +2,287 @@ using Microsoft.Maui.Devices.Sensors;
 using Microsoft.Maui.ApplicationModel;
 using System.Diagnostics;
 using Microsoft.Maui.Dispatching;
+using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace SmartSearch.Services
 {
     public class LocationService : ILocationService
     {
         private readonly IGeolocation _geolocation;
-        private bool _isTracking;
-        private readonly TimeSpan _updateInterval = TimeSpan.FromSeconds(10);
-        private const double _distanceThresholdMeters = 10.0;
-        private IDispatcherTimer? _timer;
+        private readonly IWifiService _wifiService;
+        private readonly IBusinessService _businessService;
+        private readonly ILogger<LocationService> _logger;
+        private readonly SemaphoreSlim _locationUpdateLock = new(1, 1);
+        private readonly SemaphoreSlim _wifiUpdateLock = new(1, 1);
+        private Location? _lastKnownLocation;
+        private double _lastKnownWifiStrength;
+        private const double LOCATION_CHANGE_THRESHOLD_METERS = 10; // 10 meters threshold
+        private const double WIFI_STRENGTH_CHANGE_THRESHOLD_DBM = 5; // 5 dBm threshold
+        private const int MIN_UPDATE_INTERVAL_MS = 1000; // Minimum 1 second between updates
+        private DateTime _lastUpdateTime = DateTime.MinValue;
 
-        public event EventHandler<Location> LocationUpdated = delegate { };
-        public event EventHandler<Location>? OnBusinessVisitDetected;
+        public event EventHandler<Location>? LocationChanged;
+        public event EventHandler<double>? WifiStrengthChanged;
 
-        public LocationService(IGeolocation geolocation)
+        public LocationService(
+            IGeolocation geolocation,
+            IWifiService wifiService,
+            IBusinessService businessService,
+            ILogger<LocationService> logger)
         {
             _geolocation = geolocation;
-            Debug.WriteLine("[LocationService] Initialized");
-        }
-
-        public async Task<bool> RequestLocationPermissionAsync()
-        {
-            try
-            {
-                Debug.WriteLine("[LocationService] Starting permission request process...");
-                
-                // First check if permissions are already granted
-                var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
-                Debug.WriteLine($"[LocationService] Initial location permission status: {status}");
-
-                if (status == PermissionStatus.Unknown || status == PermissionStatus.Denied)
-                {
-                    Debug.WriteLine("[LocationService] Location permission not granted, requesting...");
-                    status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
-                    Debug.WriteLine($"[LocationService] Location permission request result: {status}");
-                    
-                    // Give the system a moment to process the permission
-                    await Task.Delay(1000);
-                    
-                    // Check status again
-                    status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
-                    Debug.WriteLine($"[LocationService] Location permission status after delay: {status}");
-                }
-
-                var isGranted = status == PermissionStatus.Granted;
-                Debug.WriteLine($"[LocationService] Final permission status: {isGranted}");
-                
-                if (!isGranted)
-                {
-                    Debug.WriteLine("[LocationService] Permission not granted. Please enable in settings.");
-                }
-                
-                return isGranted;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[LocationService] Error requesting location permissions: {ex}");
-                return false;
-            }
+            _wifiService = wifiService;
+            _businessService = businessService;
+            _logger = logger;
         }
 
         public async Task StartLocationUpdatesAsync()
         {
-            if (_isTracking)
-            {
-                Debug.WriteLine("[LocationService] Location tracking is already active");
-                return;
-            }
-
             try
             {
-                Debug.WriteLine("[LocationService] Starting location updates...");
-                var permissionGranted = await RequestLocationPermissionAsync();
-                if (!permissionGranted)
-                {
-                    Debug.WriteLine("[LocationService] Location permission not granted");
-                    throw new Exception("Location permission not granted. Please enable location permissions in your device settings.");
+                _logger.LogInformation("Starting location updates");
+
+            var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+            if (status != PermissionStatus.Granted)
+            {
+                status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+                    if (status != PermissionStatus.Granted)
+                    {
+                        _logger.LogWarning("Location permission not granted");
+                        return;
+                    }
                 }
 
-                _isTracking = true;
-                _timer = Application.Current?.Dispatcher.CreateTimer();
-                if (_timer != null)
+                try
                 {
-                    _timer.Interval = _updateInterval;
-                    _timer.Tick += async (s, e) => await UpdateLocationAsync();
-                    _timer.Start();
-                    Debug.WriteLine("[LocationService] Location update timer started");
+                    // Get initial location
+                    var location = await _geolocation.GetLocationAsync(new GeolocationRequest
+                    {
+                        DesiredAccuracy = GeolocationAccuracy.Best,
+                        Timeout = TimeSpan.FromSeconds(5)
+                    });
 
-                    // Get initial location immediately
-                    await UpdateLocationAsync();
+                    if (location != null)
+                    {
+                        _lastKnownLocation = location;
+                        await MainThread.InvokeOnMainThreadAsync(() =>
+                        {
+                            try
+                            {
+                                LocationChanged?.Invoke(this, location);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Error invoking initial LocationChanged event");
+                            }
+                        });
+                    }
+
+                    var request = new GeolocationListeningRequest(GeolocationAccuracy.Best, TimeSpan.FromSeconds(1));
+                    _geolocation.LocationChanged += OnLocationChanged;
+        
+                    // Start listening in the background
+                    await MainThread.InvokeOnMainThreadAsync(async () =>
+                    {
+                        try
+                        {
+                            await _geolocation.StartListeningForegroundAsync(request);
+                            _logger.LogInformation("Location updates started successfully");
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error starting location updates");
+                            _geolocation.LocationChanged -= OnLocationChanged;
+                        }
+                    });
                 }
-                else
+                catch (Exception ex)
                 {
-                    Debug.WriteLine("[LocationService] Failed to create timer");
-                    throw new Exception("Failed to initialize location updates");
+                    _logger.LogError(ex, "Error initializing location updates");
+                    _geolocation.LocationChanged -= OnLocationChanged;
                 }
             }
             catch (Exception ex)
             {
-                _isTracking = false;
-                Debug.WriteLine($"[LocationService] Error starting location updates: {ex}");
-                throw;
+                _logger.LogError(ex, "Error starting location updates");
             }
         }
 
         public async Task StopLocationUpdatesAsync()
         {
-            if (!_isTracking)
-            {
-                Debug.WriteLine("Location tracking is not active");
-                return;
-            }
-
             try
             {
-                Debug.WriteLine("Stopping location updates...");
-                _timer?.Stop();
-                _timer = null;
-                _isTracking = false;
-                Debug.WriteLine("Location updates stopped");
+                _logger.LogInformation("Stopping location updates");
+                _geolocation.LocationChanged -= OnLocationChanged;
+                _logger.LogInformation("Location updates stopped successfully");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error stopping location updates: {ex}");
-                throw new Exception($"Failed to stop location updates: {ex.Message}", ex);
-            }
-        }
-
-        public async Task<Location> GetCurrentLocationAsync()
-        {
-            try
-            {
-                Debug.WriteLine("[LocationService] Getting current location...");
-                var location = await _geolocation.GetLocationAsync(new GeolocationRequest
-                {
-                    DesiredAccuracy = GeolocationAccuracy.Best,
-                    Timeout = TimeSpan.FromSeconds(5)
-                });
-
-                if (location == null)
-                {
-                    Debug.WriteLine("[LocationService] Unable to get location - null result");
-                    throw new Exception("Unable to get location. Please check if location services are enabled.");
-                }
-
-                Debug.WriteLine($"[LocationService] Location obtained: {location.Latitude}, {location.Longitude}");
-                return location;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[LocationService] Error getting location: {ex}");
+                _logger.LogError(ex, "Error stopping location updates");
                 throw;
             }
         }
 
-        private async Task UpdateLocationAsync()
+        private async void OnLocationChanged(object? sender, GeolocationLocationChangedEventArgs e)
         {
             try
             {
-                Debug.WriteLine("[LocationService] Requesting current location...");
-                var location = await GetCurrentLocationAsync();
-                if (location != null)
+                if (!await _locationUpdateLock.WaitAsync(0))
                 {
-                    Debug.WriteLine($"[LocationService] Location obtained: {location.Latitude}, {location.Longitude}");
-                    LocationUpdated?.Invoke(this, location);
-                    await CheckForBusinessVisitAsync(location);
+                    _logger.LogDebug("Location update already in progress, skipping");
+                    return;
                 }
-                else
+
+                try
                 {
-                    Debug.WriteLine("[LocationService] Location update returned null");
+                    var now = DateTime.UtcNow;
+                    if ((now - _lastUpdateTime).TotalMilliseconds < MIN_UPDATE_INTERVAL_MS)
+                    {
+                        _logger.LogDebug("Update interval too short, skipping");
+                        return;
+                    }
+
+                    var location = e.Location;
+                    if (location == null)
+                    {
+                        _logger.LogWarning("Received null location update");
+                        return;
+                    }
+
+                    _logger.LogDebug("Location changed: {Latitude}, {Longitude}", location.Latitude, location.Longitude);
+
+                    if (_lastKnownLocation != null)
+                    {
+                        var distance = Location.CalculateDistance(
+                            _lastKnownLocation.Latitude,
+                            _lastKnownLocation.Longitude,
+                            location.Latitude,
+                            location.Longitude,
+                            DistanceUnits.Kilometers);
+
+                        _logger.LogDebug("Distance moved: {Distance} meters", distance * 1000);
+
+                        // Only trigger if moved more than threshold
+                        if (distance * 1000 < LOCATION_CHANGE_THRESHOLD_METERS)
+                        {
+                            _logger.LogDebug("Location change below threshold, skipping update");
+                            return;
+                        }
+                    }
+
+                    _lastKnownLocation = location;
+                    _lastUpdateTime = now;
+            
+                    // Invoke location changed event on the main thread
+                    await MainThread.InvokeOnMainThreadAsync(() =>
+                    {
+                        try
+                        {
+                            LocationChanged?.Invoke(this, location);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error invoking LocationChanged event");
+                        }
+                    });
+
+                    // Update nearby businesses
+                    try
+                    {
+                        await _businessService.SearchNearbyBusinessesAsync(location.Latitude, location.Longitude);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error updating nearby businesses");
+                    }
+                }
+                finally
+                {
+                    _locationUpdateLock.Release();
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[LocationService] Error updating location: {ex}");
+                _logger.LogError(ex, "Error handling location change");
             }
         }
 
-        private async Task CheckForBusinessVisitAsync(Location location)
+        public async Task StartWifiUpdatesAsync()
         {
             try
             {
-                // TODO: In a real implementation, this would query nearby businesses
-                // For now, we'll simulate a business visit detection
-                if (location.Accuracy <= 20) // Only trigger if accuracy is good enough
-                {
-                    OnBusinessVisitDetected?.Invoke(this, location);
-                    Debug.WriteLine($"Business visit detected at location: {location.Latitude}, {location.Longitude}");
-                }
-                await Task.CompletedTask;
+                _logger.LogInformation("Starting WiFi updates");
+                _wifiService.WifiStrengthChanged += OnWifiStrengthChanged;
+                await _wifiService.StartMonitoringAsync();
+                _logger.LogInformation("WiFi updates started successfully");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error checking for business visit: {ex}");
+                _logger.LogError(ex, "Error starting WiFi updates");
+                throw;
+            }
+        }
+
+        public async Task StopWifiUpdatesAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Stopping WiFi updates");
+                _wifiService.WifiStrengthChanged -= OnWifiStrengthChanged;
+                await _wifiService.StopMonitoringAsync();
+                _logger.LogInformation("WiFi updates stopped successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error stopping WiFi updates");
+                throw;
+            }
+        }
+
+        private async void OnWifiStrengthChanged(object? sender, double strength)
+        {
+            try
+            {
+                if (!await _wifiUpdateLock.WaitAsync(0))
+                {
+                    _logger.LogDebug("WiFi update already in progress, skipping");
+                    return;
+                }
+
+                try
+                {
+                    _logger.LogDebug("WiFi strength changed: {Strength} dBm", strength);
+
+                    if (_lastKnownWifiStrength != 0)
+                    {
+                        var strengthDiff = Math.Abs(strength - _lastKnownWifiStrength);
+                        _logger.LogDebug("WiFi strength change: {StrengthDiff} dBm", strengthDiff);
+
+                        // Only trigger if strength changed more than threshold
+                        if (strengthDiff < WIFI_STRENGTH_CHANGE_THRESHOLD_DBM)
+                        {
+                            _logger.LogDebug("WiFi strength change below threshold, skipping update");
+                            return;
+                        }
+                    }
+
+                    _lastKnownWifiStrength = strength;
+                    WifiStrengthChanged?.Invoke(this, strength);
+
+                    if (_lastKnownLocation != null)
+                    {
+                        await _businessService.SearchNearbyBusinessesAsync(_lastKnownLocation.Latitude, _lastKnownLocation.Longitude);
+                    }
+                }
+                finally
+                {
+                    _wifiUpdateLock.Release();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling WiFi strength change");
             }
         }
     }

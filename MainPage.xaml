@@ -44,6 +44,18 @@
         <!-- Main Content -->
         <ScrollView Grid.Row="1">
             <VerticalStackLayout Spacing="24" Padding="16">
+                <!-- Error Message -->
+                <Frame IsVisible="{Binding HasError}"
+                       BackgroundColor="#FFF0F0"
+                       Padding="16,8"
+                       CornerRadius="8"
+                       BorderColor="#FFD0D0"
+                       HasShadow="False">
+                    <Label Text="{Binding ErrorMessage}"
+                           TextColor="#CC0000"
+                           FontSize="14"/>
+                </Frame>
+
                 <!-- Search Bar -->
                 <Frame BackgroundColor="#F5F5F5"
                        Padding="16,8"
@@ -65,30 +77,30 @@
                 </Frame>
 
                 <!-- Action Cards -->
-                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16">
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
                     <!-- Nearby -->
                     <Frame Grid.Column="0"
                            BackgroundColor="#F0F4FF"
-                           Padding="16"
-                           CornerRadius="12"
+                           Padding="12,8"
+                           CornerRadius="8"
                            HasShadow="False">
-                        <VerticalStackLayout Spacing="8">
+                        <VerticalStackLayout Spacing="4">
                             <Frame BackgroundColor="#E1E9FF"
-                                   WidthRequest="40"
-                                   HeightRequest="40"
-                                   CornerRadius="20"
+                                   WidthRequest="32"
+                                   HeightRequest="32"
+                                   CornerRadius="16"
                                    Padding="0"
                                    HasShadow="False"
                                    HorizontalOptions="Start">
                                 <Label Text="📍"
-                                       FontSize="20"
+                                       FontSize="16"
                                        TextColor="#0066FF"
                                        HorizontalOptions="Center"
                                        VerticalOptions="Center"/>
                             </Frame>
                             <Label Text="Nearby"
                                    TextColor="#0066FF"
-                                   FontSize="16"
+                                   FontSize="14"
                                    FontAttributes="Bold"/>
                         </VerticalStackLayout>
                     </Frame>
@@ -96,26 +108,26 @@
                     <!-- Top Rated -->
                     <Frame Grid.Column="1"
                            BackgroundColor="#F8F0FF"
-                           Padding="16"
-                           CornerRadius="12"
+                           Padding="12,8"
+                           CornerRadius="8"
                            HasShadow="False">
-                        <VerticalStackLayout Spacing="8">
+                        <VerticalStackLayout Spacing="4">
                             <Frame BackgroundColor="#F0E1FF"
-                                   WidthRequest="40"
-                                   HeightRequest="40"
-                                   CornerRadius="20"
+                                   WidthRequest="32"
+                                   HeightRequest="32"
+                                   CornerRadius="16"
                                    Padding="0"
                                    HasShadow="False"
                                    HorizontalOptions="Start">
                                 <Label Text="⭐"
-                                       FontSize="20"
+                                       FontSize="16"
                                        TextColor="#9933FF"
                                        HorizontalOptions="Center"
                                        VerticalOptions="Center"/>
                             </Frame>
                             <Label Text="Top Rated"
                                    TextColor="#9933FF"
-                                   FontSize="16"
+                                   FontSize="14"
                                    FontAttributes="Bold"/>
                         </VerticalStackLayout>
                     </Frame>
@@ -123,33 +135,33 @@
                     <!-- Add New -->
                     <Frame Grid.Column="2"
                            BackgroundColor="#F0FFF4"
-                           Padding="16"
-                           CornerRadius="12"
+                           Padding="12,8"
+                           CornerRadius="8"
                            HasShadow="False">
-                        <VerticalStackLayout Spacing="8">
+                        <VerticalStackLayout Spacing="4">
                             <Frame BackgroundColor="#E1FFE9"
-                                   WidthRequest="40"
-                                   HeightRequest="40"
-                                   CornerRadius="20"
+                                   WidthRequest="32"
+                                   HeightRequest="32"
+                                   CornerRadius="16"
                                    Padding="0"
                                    HasShadow="False"
                                    HorizontalOptions="Start">
                                 <Label Text="➕"
-                                       FontSize="20"
+                                       FontSize="16"
                                        TextColor="#00CC33"
                                        HorizontalOptions="Center"
                                        VerticalOptions="Center"/>
                             </Frame>
                             <Label Text="Add New"
                                    TextColor="#00CC33"
-                                   FontSize="16"
+                                   FontSize="14"
                                    FontAttributes="Bold"/>
                         </VerticalStackLayout>
                     </Frame>
                 </Grid>
 
                 <!-- Recently Visited -->
-                <VerticalStackLayout Spacing="16">
+                <VerticalStackLayout Spacing="12">
                     <Grid ColumnDefinitions="*,Auto">
                         <Label Grid.Column="0"
                                Text="Recently Visited"
@@ -162,44 +174,44 @@
                                 Command="{Binding SeeAllRecentCommand}"/>
                     </Grid>
 
-                    <CollectionView ItemsSource="{Binding RecentlyVisited}"
-                                  HeightRequest="160">
+                    <CollectionView ItemsSource="{Binding LocalBusinesses}"
+                                  HeightRequest="140">
                         <CollectionView.ItemsLayout>
-                            <LinearItemsLayout Orientation="Horizontal" ItemSpacing="16"/>
+                            <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8"/>
                         </CollectionView.ItemsLayout>
                         
                         <CollectionView.ItemTemplate>
                             <DataTemplate x:DataType="models:Business">
                                 <Frame BackgroundColor="White"
-                                       WidthRequest="140"
-                                       CornerRadius="12"
-                                       Padding="16"
+                                       WidthRequest="120"
+                                       CornerRadius="8"
+                                       Padding="12,8"
                                        HasShadow="True"
                                        BorderColor="#EEEEEE">
-                                    <VerticalStackLayout Spacing="8">
+                                    <VerticalStackLayout Spacing="4">
                                         <Frame BackgroundColor="#F0F4FF"
-                                               WidthRequest="40"
-                                               HeightRequest="40"
-                                               CornerRadius="20"
+                                               WidthRequest="32"
+                                               HeightRequest="32"
+                                               CornerRadius="16"
                                                Padding="0"
                                                HasShadow="False"
                                                HorizontalOptions="Start">
                                             <Label Text="🏢"
-                                                   FontSize="20"
+                                                   FontSize="16"
                                                    TextColor="#666666"
                                                    HorizontalOptions="Center"
                                                    VerticalOptions="Center"/>
                                         </Frame>
                                         <Label Text="{Binding Name}"
-                                               FontSize="16"
+                                               FontSize="14"
                                                LineBreakMode="TailTruncation"
                                                TextColor="#333333"/>
-                                        <HorizontalStackLayout Spacing="4">
+                                        <HorizontalStackLayout Spacing="2">
                                             <Label Text="⭐"
                                                    TextColor="#FFB800"
-                                                   FontSize="16"/>
+                                                   FontSize="14"/>
                                             <Label Text="{Binding Rating, StringFormat='{0:F1}'}"
-                                                   FontSize="14"
+                                                   FontSize="12"
                                                    TextColor="#666666"/>
                                         </HorizontalStackLayout>
                                     </VerticalStackLayout>
@@ -210,7 +222,7 @@
                 </VerticalStackLayout>
 
                 <!-- Nearby Places -->
-                <VerticalStackLayout Spacing="16">
+                <VerticalStackLayout Spacing="12">
                     <Grid ColumnDefinitions="*,Auto">
                         <Label Grid.Column="0"
                                Text="Nearby Places"
@@ -226,71 +238,90 @@
                     <CollectionView ItemsSource="{Binding NearbyBusinesses}">
                         <CollectionView.ItemTemplate>
                             <DataTemplate x:DataType="models:Business">
-                                <Frame Margin="0,0,0,12"
-                                       Padding="16"
-                                       CornerRadius="12"
+                                <Frame Margin="0,0,0,8"
+                                       Padding="12,8"
+                                       CornerRadius="8"
                                        HasShadow="True"
                                        BorderColor="#EEEEEE"
                                        BackgroundColor="White">
-                                    <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,Auto">
-                                        <Label Grid.Row="0" Grid.Column="0"
-                                               Text="{Binding Name}"
-                                               FontSize="18"
-                                               FontAttributes="Bold"
-                                               TextColor="#333333"/>
+                                    <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="4">
+                                        <Grid Grid.Row="0" Grid.Column="0"
+                                              ColumnDefinitions="*,Auto">
+                                            <Label Grid.Column="0"
+                                                   Text="{Binding Name}"
+                                                   FontSize="16"
+                                                   FontAttributes="Bold"
+                                                   TextColor="#333333"/>
+                                            <Frame Grid.Column="1"
+                                                   IsVisible="{Binding IsFromGooglePlaces}"
+                                                   BackgroundColor="#E1E9FF"
+                                                   Padding="6,2"
+                                                   CornerRadius="4"
+                                                   HasShadow="False"
+                                                   Margin="8,0,0,0">
+                                                <Label Text="Google"
+                                                       TextColor="#0066FF"
+                                                       FontSize="10"/>
+                                            </Frame>
+                                        </Grid>
                                         
                                         <Label Grid.Row="0" Grid.Column="1"
                                                Text="⭐"
-                                               FontSize="24"
-                                               TextColor="#CCCCCC"/>
+                                               FontSize="20"
+                                               TextColor="{Binding IsFavorite, Converter={StaticResource BoolToColorConverter}, ConverterParameter='#FFB800,#CCCCCC'}">
+                                            <Label.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding ToggleFavoriteCommand}"/>
+                                            </Label.GestureRecognizers>
+                                        </Label>
 
                                         <Label Grid.Row="1" Grid.Column="0"
                                                Text="{Binding Category}"
-                                               TextColor="#666666"
-                                               FontSize="14"
-                                               Margin="0,4"/>
+                                               FontSize="12"
+                                               TextColor="#666666"/>
 
                                         <HorizontalStackLayout Grid.Row="2" Grid.Column="0"
-                                                             Spacing="16">
-                                            <HorizontalStackLayout Spacing="4">
-                                                <Label Text="⭐"
-                                                       TextColor="#FFB800"
-                                                       FontSize="16"/>
-                                                <Label Text="{Binding Rating, StringFormat='{0:F1}'}"
-                                                       FontSize="14"
-                                                       TextColor="#666666"/>
-                                            </HorizontalStackLayout>
-                                            
-                                            <HorizontalStackLayout Spacing="4">
-                                                <Label Text="📍"
-                                                       TextColor="#666666"
-                                                       FontSize="16"/>
-                                                <Label Text="{Binding Distance, StringFormat='{0:F1}km'}"
-                                                       FontSize="14"
-                                                       TextColor="#666666"/>
-                                            </HorizontalStackLayout>
+                                                             Spacing="4"
+                                                             Margin="0,4,0,0">
+                                            <Label Text="⭐"
+                                                   TextColor="#FFB800"
+                                                   FontSize="14"/>
+                                            <Label Text="{Binding Rating, StringFormat='{0:F1}'}"
+                                                   FontSize="12"
+                                                   TextColor="#666666"/>
+                                            <Label Text="•"
+                                                   FontSize="12"
+                                                   TextColor="#666666"/>
+                                            <Label Text="{Binding Distance, StringFormat='{0:F1}km'}"
+                                                   FontSize="12"
+                                                   TextColor="#666666"/>
                                         </HorizontalStackLayout>
 
-                                        <CollectionView Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
-                                                      ItemsSource="{Binding Features}"
-                                                      Margin="0,8,0,0">
-                                            <CollectionView.ItemsLayout>
-                                                <LinearItemsLayout Orientation="Horizontal"
-                                                                 ItemSpacing="8"/>
-                                            </CollectionView.ItemsLayout>
-                                            <CollectionView.ItemTemplate>
-                                                <DataTemplate x:DataType="x:String">
-                                                    <Frame BackgroundColor="#F0F4FF"
-                                                           Padding="8,4"
-                                                           CornerRadius="8"
-                                                           HasShadow="False">
-                                                        <Label Text="{Binding .}"
-                                                               TextColor="#0066FF"
-                                                               FontSize="12"/>
-                                                    </Frame>
-                                                </DataTemplate>
-                                            </CollectionView.ItemTemplate>
-                                        </CollectionView>
+                                        <FlexLayout Grid.Row="3" Grid.Column="0"
+                                                   Grid.ColumnSpan="2"
+                                                   Wrap="Wrap"
+                                                   JustifyContent="Start"
+                                                   AlignItems="Start"
+                                                   Margin="0,4,0,0">
+                                            <CollectionView ItemsSource="{Binding Features}"
+                                                          HeightRequest="24">
+                                                <CollectionView.ItemsLayout>
+                                                    <LinearItemsLayout Orientation="Horizontal"
+                                                                      ItemSpacing="4"/>
+                                                </CollectionView.ItemsLayout>
+                                                <CollectionView.ItemTemplate>
+                                                    <DataTemplate x:DataType="x:String">
+                                                        <Frame BackgroundColor="#F0F4FF"
+                                                               Padding="6,2"
+                                                               CornerRadius="4"
+                                                               HasShadow="False">
+                                                            <Label Text="{Binding .}"
+                                                                   TextColor="#0066FF"
+                                                                   FontSize="10"/>
+                                                        </Frame>
+                                                    </DataTemplate>
+                                                </CollectionView.ItemTemplate>
+                                            </CollectionView>
+                                        </FlexLayout>
                                     </Grid>
                                 </Frame>
                             </DataTemplate>

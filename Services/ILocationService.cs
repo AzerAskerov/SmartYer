@@ -1,12 +1,13 @@
 using Microsoft.Maui.Devices.Sensors;
 
-namespace SmartSearch.Services
+namespace SmartSearch.Services;
+
+public interface ILocationService
 {
-    public interface ILocationService
-    {
-        event EventHandler<Location> LocationUpdated;
-        Task<Location> GetCurrentLocationAsync();
-        Task StartLocationUpdatesAsync();
-        Task StopLocationUpdatesAsync();
-    }
+    event EventHandler<Location> LocationChanged;
+    event EventHandler<double> WifiStrengthChanged;
+    Task StartLocationUpdatesAsync();
+    Task StopLocationUpdatesAsync();
+    Task StartWifiUpdatesAsync();
+    Task StopWifiUpdatesAsync();
 } 

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:SmartSearch.Models"
+             xmlns:viewmodels="clr-namespace:SmartSearch.ViewModels"
+             xmlns:converters="clr-namespace:SmartSearch.Converters"
+             x:Class="SmartSearch.Views.MainPage"
+             x:DataType="viewmodels:MainViewModel"
+             Title="SmartSearch">
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+    <!-- Nearby Section -->
+    <VerticalStackLayout Grid.Row="2" Spacing="16" Margin="16">
+        <Label Text="Nearby" FontSize="24" FontAttributes="Bold" />
+        
+        <!-- Local Database Businesses -->
+        <VerticalStackLayout Spacing="8">
+            <Label Text="Local Businesses" FontSize="18" FontAttributes="Bold" />
+            <CollectionView ItemsSource="{Binding LocalBusinesses}" 
+                           EmptyView="No local businesses found"
+                           EmptyViewTemplate="{StaticResource EmptyViewTemplate}">
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:Business">
+                        <Grid Padding="12" BackgroundColor="{StaticResource CardBackground}" 
+                              ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto">
+                            <Image Grid.Row="0" Grid.Column="0" Grid.RowSpan="3"
+                                   Source="{Binding Photos[0]}" 
+                                   Aspect="AspectFill"
+                                   HeightRequest="80" WidthRequest="80"
+                                   Margin="0,0,12,0" />
+                            <Label Grid.Row="0" Grid.Column="1" 
+                                   Text="{Binding Name}" 
+                                   FontSize="16" FontAttributes="Bold" />
+                            <Label Grid.Row="1" Grid.Column="1" 
+                                   Text="{Binding Address}" 
+                                   FontSize="14" TextColor="{StaticResource SecondaryTextColor}" />
+                            <HorizontalStackLayout Grid.Row="2" Grid.Column="1" Spacing="4">
+                                <Label Text="{Binding Rating, StringFormat='{0:F1}'}" 
+                                       FontSize="14" />
+                                <Label Text="★" FontSize="14" TextColor="Gold" />
+                                <Label Text="{Binding ReviewCount, StringFormat='({0})'}" 
+                                       FontSize="14" TextColor="{StaticResource SecondaryTextColor}" />
+                            </HorizontalStackLayout>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </VerticalStackLayout>
+
+        <!-- Google Places Businesses -->
+        <VerticalStackLayout Spacing="8">
+            <Label Text="Nearby Places" FontSize="18" FontAttributes="Bold" />
+            <Grid>
+                <ActivityIndicator IsRunning="{Binding IsLoading}" 
+                                 IsVisible="{Binding IsLoading}"
+                                 HorizontalOptions="Center"
+                                 VerticalOptions="Center" />
+                <CollectionView ItemsSource="{Binding GooglePlaces}" 
+                              EmptyView="No nearby places found"
+                              EmptyViewTemplate="{StaticResource EmptyViewTemplate}"
+                              IsVisible="{Binding IsLoading, Converter={StaticResource InverseBoolConverter}}">
+                    <CollectionView.ItemsLayout>
+                        <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:Business">
+                            <Grid Padding="12" BackgroundColor="{StaticResource CardBackground}" 
+                                  ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto">
+                                <Image Grid.Row="0" Grid.Column="0" Grid.RowSpan="3"
+                                       Source="{Binding Photos[0]}" 
+                                       Aspect="AspectFill"
+                                       HeightRequest="80" WidthRequest="80"
+                                       Margin="0,0,12,0" />
+                                <Label Grid.Row="0" Grid.Column="1" 
+                                       Text="{Binding Name}" 
+                                       FontSize="16" FontAttributes="Bold" />
+                                <Label Grid.Row="1" Grid.Column="1" 
+                                       Text="{Binding Address}" 
+                                       FontSize="14" TextColor="{StaticResource SecondaryTextColor}" />
+                                <HorizontalStackLayout Grid.Row="2" Grid.Column="1" Spacing="4">
+                                    <Label Text="{Binding Rating, StringFormat='{0:F1}'}" 
+                                           FontSize="14" />
+                                    <Label Text="★" FontSize="14" TextColor="Gold" />
+                                    <Label Text="{Binding ReviewCount, StringFormat='({0})'}" 
+                                           FontSize="14" TextColor="{StaticResource SecondaryTextColor}" />
+                                </HorizontalStackLayout>
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </Grid>
+        </VerticalStackLayout>
+    </VerticalStackLayout>
+</ContentPage> 

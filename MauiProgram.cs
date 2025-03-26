@@ -26,10 +26,26 @@ public static class MauiProgram
 		// Configure services
 		builder.Services.AddHttpClient();
 
+		// Load configuration
+		var configuration = new ConfigurationBuilder()
+			.SetBasePath(Directory.GetCurrentDirectory())
+			.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+			.Build();
+
+		// Configure Google Places API
+		var googleApiKey = configuration.GetSection("GooglePlaces:ApiKey").Value;
+		if (string.IsNullOrEmpty(googleApiKey))
+		{
+			googleApiKey = "AIzaSyCkFb29hN8XJiGjo2B2YctH4w2vy0L9LaY"; // Fallback to default key
+		}
+		builder.Services.AddSingleton<IGooglePlacesService>(sp => 
+			new GooglePlacesService(sp.GetRequiredService<IHttpClientFactory>().CreateClient(), googleApiKey));
+
 		// Register Services
 		builder.Services.AddSingleton<IGeolocation>(Geolocation.Default);
-		builder.Services.AddSingleton<IBusinessService, BusinessService>();
+		builder.Services.AddSingleton<IWifiService, WifiService>();
 		builder.Services.AddSingleton<ILocationService, LocationService>();
+		builder.Services.AddSingleton<IBusinessService, BusinessService>();
 
 		// Register ViewModels
 		builder.Services.AddTransient<MainViewModel>();

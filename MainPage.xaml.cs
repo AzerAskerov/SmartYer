@@ -7,10 +7,10 @@ public partial class MainPage : ContentPage
 {
 	private readonly MainViewModel _viewModel;
 
-	public MainPage(IBusinessService businessService, ILocationService locationService)
+	public MainPage(MainViewModel viewModel)
 	{
 		InitializeComponent();
-		_viewModel = new MainViewModel(businessService, locationService);
+		_viewModel = viewModel;
 		BindingContext = _viewModel;
 	}
 
@@ -18,14 +18,12 @@ public partial class MainPage : ContentPage
 	{
 		base.OnAppearing();
 		await _viewModel.InitializeAsync();
-		await _viewModel.StartLocationTrackingCommand.ExecuteAsync(null);
 	}
 
-	protected override async void OnDisappearing()
+	protected override void OnDisappearing()
 	{
 		base.OnDisappearing();
 		_viewModel.Cleanup();
-		await _viewModel.StopLocationTrackingCommand.ExecuteAsync(null);
 	}
 }
 

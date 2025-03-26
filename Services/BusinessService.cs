@@ -5,48 +5,20 @@ using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Linq;
+using System;
+using Microsoft.Extensions.Logging;
 
 namespace SmartSearch.Services;
 
 public class BusinessService : IBusinessService
 {
     private readonly HttpClient _httpClient;
+    private readonly IGooglePlacesService _googlePlacesService;
     private readonly string _apiKey;
     private const string _baseUrl = "https://api.example.com/v1"; // Replace with actual API URL
-
-    private readonly List<Business> _sampleBusinesses = new()
-    {
-        new Business
-        {
-            Id = "1",
-            Name = "Ali's Laptop Repair",
-            Category = "Computer Repair",
-            Rating = 4.5,
-            ReviewCount = 128,
-            Distance = 0.5,
-            Features = new List<string> { "technical knowledge", "fair price" }
-        },
-        new Business
-        {
-            Id = "2",
-            Name = "Ehmed Avto Service",
-            Category = "Auto Repair Zone",
-            Rating = 4.2,
-            ReviewCount = 256,
-            Distance = 1.2,
-            Features = new List<string> { "quality repairs", "multiple services" }
-        },
-        new Business
-        {
-            Id = "3",
-            Name = "Aygun Tyre Service",
-            Category = "Tire Shop",
-            Rating = 4.0,
-            ReviewCount = 89,
-            Distance = 0.8,
-            Features = new List<string> { "good prices", "quality tires" }
-        }
-    };
+    private readonly ILogger<BusinessService> _logger;
+    private readonly List<Business> _sampleBusinesses;
 
     private readonly List<Business> _recentlyVisited = new()
     {
@@ -73,36 +45,173 @@ public class BusinessService : IBusinessService
         }
     };
 
-    public BusinessService(HttpClient httpClient)
+    public BusinessService(
+        HttpClient httpClient,
+        IGooglePlacesService googlePlacesService,
+        ILogger<BusinessService> logger)
     {
         _httpClient = httpClient;
+        _googlePlacesService = googlePlacesService;
+        _logger = logger;
         _apiKey = "test_api_key"; // TODO: Replace with actual API key
         _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_apiKey}");
+        _sampleBusinesses = InitializeSampleData();
     }
 
-    public async Task<SearchResult> SearchNearbyBusinessesAsync(double latitude, double longitude, int radius)
+    public async Task<List<Business>> GetRecentBusinessesAsync()
     {
         try
         {
-            Debug.WriteLine($"[BusinessService] Searching for businesses near ({latitude}, {longitude}) with radius {radius}m");
-            
-            // Simulating API delay
-            await Task.Delay(500);
-            
-            Debug.WriteLine($"[BusinessService] Returning {_sampleBusinesses.Count} sample businesses:");
-            foreach (var business in _sampleBusinesses)
-            {
-                Debug.WriteLine($"[BusinessService] - {business.Name} ({business.Category})");
-            }
-            
-            return new SearchResult { Businesses = _sampleBusinesses };
+            _logger.LogInformation("Getting recent businesses");
+            await Task.Delay(200); // Simulate network delay
+            return _sampleBusinesses.OrderByDescending(b => b.LastUpdated).ToList();
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[BusinessService] Error searching nearby businesses: {ex}");
+            _logger.LogError(ex, "Error getting recent businesses");
             throw;
         }
     }
+
+    public async Task<List<Business>> GetLocalBusinessesAsync(double latitude, double longitude)
+    {
+        try
+        {
+            _logger.LogInformation("Getting local businesses");
+            await Task.Delay(200); // Simulate network delay
+            var businesses = _sampleBusinesses.Select(b => new Business
+            {
+                Id = b.Id,
+                Name = b.Name,
+                Category = b.Category,
+                Rating = b.Rating,
+                ReviewCount = b.ReviewCount,
+                Distance = b.Distance,
+                Features = b.Features,
+                Location = b.Location,
+                LastUpdated = b.LastUpdated,
+                Photos = b.Photos,
+                IsFromGooglePlaces = false
+            }).ToList();
+            return businesses;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting local businesses");
+            throw;
+        }
+    }
+
+    public async Task<List<Business>> SearchNearbyBusinessesAsync(double latitude, double longitude)
+    {
+        try
+        {
+            _logger.LogInformation("Searching for nearby businesses");
+            
+            // Get businesses from local database
+            var localBusinesses = await GetLocalBusinessesAsync(latitude, longitude);
+            foreach (var business in localBusinesses)
+            {
+                business.IsFromGooglePlaces = false;
+            }
+
+            // Get businesses from Google Places API
+            var googlePlaces = await _googlePlacesService.SearchNearbyPlacesAsync(latitude, longitude, 5000);
+            foreach (var business in googlePlaces)
+            {
+                business.IsFromGooglePlaces = true;
+            }
+
+            // Combine and sort results
+            var allBusinesses = localBusinesses.Concat(googlePlaces)
+                .OrderByDescending(b => b.Rating)
+                .ThenBy(b => CalculateDistance(latitude, longitude, b.Location.Latitude, b.Location.Longitude))
+                .ToList();
+
+            _logger.LogInformation("Found {Count} nearby businesses", allBusinesses.Count);
+            return allBusinesses;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching nearby businesses");
+            throw;
+        }
+    }
+
+    private List<Business> InitializeSampleData()
+    {
+        return new List<Business>
+                {
+                    new Business
+                    {
+                        Id = "1",
+                Name = "Ali's Laptop Repair",
+                Category = "Computer Repair",
+                        Rating = 4.5,
+                ReviewCount = 128,
+                Distance = 0.5,
+                Features = new List<string> { "technical knowledge", "fair price" },
+                Location = new BusinessLocation 
+                { 
+                    Latitude = 40.4093,
+                    Longitude = 49.8671,
+                    Address = "Baku, Azerbaijan"
+                },
+                LastUpdated = DateTime.Now,
+                Photos = new List<string> { "sample_repair.jpg" }
+            },
+            new Business
+            {
+                Id = "2",
+                Name = "Ehmed Avto Service",
+                Category = "Auto Repair Zone",
+                Rating = 4.2,
+                ReviewCount = 256,
+                Distance = 1.2,
+                Features = new List<string> { "quality repairs", "multiple services" },
+                Location = new BusinessLocation 
+                { 
+                    Latitude = 40.4093,
+                    Longitude = 49.8671,
+                    Address = "Baku, Azerbaijan"
+                },
+                LastUpdated = DateTime.Now.AddHours(-1),
+                Photos = new List<string> { "sample_auto.jpg" }
+            },
+            new Business
+            {
+                Id = "3",
+                Name = "Aygun Tyre Service",
+                Category = "Tire Shop",
+                Rating = 4.0,
+                ReviewCount = 89,
+                Distance = 0.8,
+                Features = new List<string> { "good prices", "quality tires" },
+                Location = new BusinessLocation 
+                { 
+                    Latitude = 40.4093,
+                    Longitude = 49.8671,
+                    Address = "Baku, Azerbaijan"
+                },
+                LastUpdated = DateTime.Now.AddHours(-2),
+                Photos = new List<string> { "sample_tire.jpg" }
+            }
+        };
+    }
+
+    private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
+    {
+        const double R = 6371; // Earth's radius in kilometers
+        var dLat = ToRad(lat2 - lat1);
+        var dLon = ToRad(lon2 - lon1);
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                Math.Cos(ToRad(lat1)) * Math.Cos(ToRad(lat2)) *
+                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        return R * c;
+    }
+
+    private double ToRad(double degrees) => degrees * Math.PI / 180;
 
     public async Task<List<string>> GetPopularCategoriesAsync()
     {
@@ -130,7 +239,7 @@ public class BusinessService : IBusinessService
         try
         {
             Debug.WriteLine("[BusinessService] Getting recently visited businesses");
-            await Task.Delay(200);
+            await Task.Delay(200); // Add a small delay to simulate network call
             
             Debug.WriteLine($"[BusinessService] Returning {_recentlyVisited.Count} recently visited businesses:");
             foreach (var business in _recentlyVisited)
